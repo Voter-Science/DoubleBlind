@@ -1,0 +1,17 @@
+{
+    "compilerOptions": {
+        "sourceMap" : true,
+        "module": "commonjs",
+        "noImplicitAny": true,
+        //"suppressImplicitAnyIndexErrors": true,
+        "removeComments": true,
+        "target": "es5", // es5 for browsers
+        // Cmdline, so don't include  browser
+        "lib": [
+            "es2015",
+            "dom",
+            "scripthost"
+        ]
+    },
+    "exclude": ["node_modules", "output"]  
+}
