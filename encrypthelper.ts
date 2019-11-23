@@ -40,7 +40,9 @@ export function sample(str: string): string {
     return x;
 };
 
+// Case insensitive hash. 
 export function strHash(str: string): number {    
+    str = str.toLowerCase();
     var hash = SHA256(str);
     return hash.toString(encHex);
 }

@@ -179,15 +179,22 @@ async function workflow(client: le.LEClient, opts: IArgsFlow) {
                 opts.file = file;
             }
             var lines = readFileLines(file);
-            var uploadInfo = client.getUploadInfoFromFile(file, lines, encryptor);
+            var title = file;
+            var parseResult = client.getUploadInfoFromFile(title, lines, encryptor);
+
+            var uploadInfo = parseResult.body;
             var handle = await client.uploadFileAsync(uploadInfo);
 
             opts.h = MakeReceipt(handle, phrase);
 
             console.log("encrypted and uploaded " + file + "...");
-            console.log("anonymized sample from your file:")
-            for (var i = 0; i < uploadInfo.Samples.length; i++) {
-                console.log("  " + uploadInfo.Samples[i]);
+
+            {
+                var yourSamples: string[] = parseResult.sampleKeys;
+                console.log("sample keys from your file:")
+                for (var i = 0; i < yourSamples.length; i++) {
+                    console.log("  " + yourSamples[i]);
+                }
             }
 
             console.log();
@@ -211,6 +218,14 @@ async function workflow(client: le.LEClient, opts: IArgsFlow) {
         opts.id = await client.createOrAcceptMatch(h1, h2);
         console.log("Match Created: " + opts.id);
     } else {
+        // Must also have receipt specified since that's where the decoding passcode is.
+        if (!opts.h2) {
+            console.log("Missing --h2 parameter. Required when using --id.");
+            return;
+        } else {
+            // TODO - consistency cheeck between id and h2. 
+        }
+
         console.log("Using previously created match: " + opts.id);
     }
 
@@ -218,7 +233,7 @@ async function workflow(client: le.LEClient, opts: IArgsFlow) {
     // Both sides must accept the match to continue;
     console.log();
     console.log("[Waiting for partner to enter your receipt to accept the match...]");
-    console.log("> to resume from here: --id " + opts.id);
+    console.log("> to resume from here: --id " + opts.id + "--h2 " + opts.h2);
 
     var response1 = await client.waitForStatus(opts.id, le.MatchPhases.Accepted);
     console.log("Match Accepted!");
@@ -247,7 +262,7 @@ async function workflow(client: le.LEClient, opts: IArgsFlow) {
     var encryptedLines = await client.Download(response2.YourResults);
 
     // Decrypt results using the phrase from the other's handle. 
-    
+
     for (var i = 0; i < encryptedLines.length; i++) {
         console.log("  " + decryptor.Decrypt(encryptedLines[i]));
     }
