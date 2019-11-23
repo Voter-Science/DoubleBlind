@@ -14,7 +14,7 @@ declare var process: any;  // https://nodejs.org/docs/latest/api/process.html
 
 import * as readline from 'readline';
 import * as fs from 'fs';
-import { Encryptor, Helpers } from './encrypthelper';
+import { Encryptor, Helpers, strHash } from './encrypthelper';
 
 // https://stackoverflow.com/questions/31673587/error-unable-to-verify-the-first-certificate-in-nodejs
 // require('https').globalAgent.options.ca = require('ssl-root-cas/latest').create();
@@ -48,17 +48,17 @@ var argv: IArgs = yargs
         string: true
     })
     .option('user', {
-        required : true,
+        required: true,
         description: "userid for login",
         string: true
     })
     .option('pwd', {
-        required : true,
+        required: true,
         description: "password for login",
         string: true
     })
     .option('url', {
-        required : true,
+        required: true,
         description: "API server",
         //default: "https://localhost:44387",
         default: "https://listexchangeapi.azurewebsites.net",
@@ -141,23 +141,19 @@ function readlineAsync(prompt: string): Promise<string> {
     });
 }
 
-async function inputPassPhrase()  : Promise<string>
-{      
-  while(true)
-  {
-      var phrase = await readlineAsync("Enter a short passphrase for encrypting ([a-z]):");
-      phrase = phrase.toLowerCase();
-      if (Helpers.isValidPassPhrase(phrase)) {
-          return phrase;
-      }
-      console.log(' bad passphrase. Try again.');
-  }
+async function inputPassPhrase(): Promise<string> {
+    while (true) {
+        var phrase = await readlineAsync("Enter a short passphrase for encrypting ([a-z]):");
+        phrase = phrase.toLowerCase();
+        if (Helpers.isValidPassPhrase(phrase)) {
+            return phrase;
+        }
+        console.log(' bad passphrase. Try again.');
+    }
 }
 
-async function inputReceiptAsync() : Promise<string>
-{
-    while(true)
-    {
+async function inputReceiptAsync(): Promise<string> {
+    while (true) {
         var receipt = await readlineAsync("Enter partner's receipt:");
         if (Helpers.isValidReceipt(receipt)) {
             return receipt;
@@ -173,7 +169,7 @@ async function workflow(client: le.LEClient, opts: IArgsFlow) {
     // $$$ SAve Opts to file at each stage; can then just resume via '--resume foo.txt'
     if (!opts.id) {
         if (!opts.h) {
-            var phrase = await inputPassPhrase();          
+            var phrase = await inputPassPhrase();
 
             var encryptor = new Encryptor(phrase);
 
@@ -228,6 +224,10 @@ async function workflow(client: le.LEClient, opts: IArgsFlow) {
     console.log("Match Accepted!");
     printReport(response1);
 
+    // Verify encryption canary 
+    var decryptor = new Encryptor(getPhrase(opts.h2));
+    client.verifyCanary(decryptor, response1);
+
 
     if (!opts.n) {
         // $$$ Readline for # to swap
@@ -247,7 +247,7 @@ async function workflow(client: le.LEClient, opts: IArgsFlow) {
     var encryptedLines = await client.Download(response2.YourResults);
 
     // Decrypt results using the phrase from the other's handle. 
-    var decryptor = new Encryptor(getPhrase(opts.h2));
+    
     for (var i = 0; i < encryptedLines.length; i++) {
         console.log("  " + decryptor.Decrypt(encryptedLines[i]));
     }
@@ -280,6 +280,17 @@ async function mainAsync(): Promise<void> {
     await workflow(client, argv);
 }
 
+
 mainAsync().then(() => {
     console.log("Done");
 });
+
+
+function encryptTest() {
+    console.log(strHash("abcdef"));
+
+    var enc = new Encryptor("secret123");
+    var x = enc.Encrypt("Hello World1!");
+    console.log(x);
+    console.log(enc.Decrypt(x));
+}

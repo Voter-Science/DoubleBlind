@@ -1,7 +1,7 @@
 import * as XC from 'trc-httpshim/xclient'
 import * as common from 'trc-httpshim/common'
 
-import { strHash, sample, Encryptor} from './encrypthelper'
+import { strHash, sample, Encryptor } from './encrypthelper'
 
 export type UploadHandle = string;
 export type MatchId = string;
@@ -13,7 +13,12 @@ export interface IUploadInfo {
     N: number;
     Hashes: string[];
     EncryptedData: string[];
-    Samples : String[];
+    Samples: String[];
+    HashKind: string;
+    EncryptKind: string;
+    DataKind: string;
+    EncryptCanary: string;
+    Protocol : number;
 }
 
 export interface IUploadResult {
@@ -29,12 +34,14 @@ export interface IMatchStatusResult_OverlapReport {
     OtherListSize: number;
     Overlap: number;
     OtherSamples : string[];
+    OtherEncryptedCanary : string;
 }
 
 export interface IMatchStatusResult {
     Phase: MatchPhase;
     Report: IMatchStatusResult_OverlapReport; // Only set on Phase="Accepted"    
     YourResults: DownloadHandle; // Only set after Phase="AgreeSwap"
+    
 }
 
 // TODO - make this an enum? But be sure it serializes. 
@@ -61,6 +68,10 @@ export class LEClient {
         this._http = XC.XClient.New(urlApi, authToken, null);
     }
     
+
+    public static _Protocol : number = 1;
+    public static _Canary : string = "test123"; // related to protocol
+
     public getUploadInfoFromFile(title : string, lines: string[], enc : Encryptor) : IUploadInfo
     {
         var body: IUploadInfo = {
@@ -68,7 +79,12 @@ export class LEClient {
             N: lines.length,
             Samples : [],
             Hashes: [],
-            EncryptedData: []
+            EncryptedData: [],
+            HashKind : Encryptor.HashKind,
+            EncryptKind : Encryptor.EncryptKind,
+            DataKind : "general",
+            Protocol: LEClient._Protocol,
+            EncryptCanary : enc.Encrypt(LEClient._Canary)
         };
 
         for(var i = 0; i < lines.length; i++)
@@ -113,6 +129,17 @@ export class LEClient {
             // console.log(" POST match successful: ");
             return response.MatchId;
         });
+    }
+
+    public verifyCanary(enc : Encryptor, results : IMatchStatusResult) : void 
+    {
+        var x = results.Report.OtherEncryptedCanary;
+        var y = enc.Decrypt(x);
+        if (y != LEClient._Canary)
+        {
+            // This should never happen with a well-behaved client.
+            throw "Error: encryption canary failed.";
+        }
     }
 
     // $$$ >= phase. (they're strings...)
