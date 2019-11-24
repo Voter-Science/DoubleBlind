@@ -1,6 +1,6 @@
 {
-  "name": "listexchangecli",
-  "version": "1.0.0",
+  "name": "voterscience.listexchange.api",
+  "version": "1.0.2",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -19,5 +19,8 @@
     "@types/node": "^12.12.11",
     "@types/yargs": "^13.0.3",
     "typescript": "^3.7.2"
-  }
+  },
+  "files" : [ 
+    "dist"
+  ]
 }

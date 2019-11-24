@@ -14,13 +14,11 @@ declare var process: any;  // https://nodejs.org/docs/latest/api/process.html
 
 import * as readline from 'readline';
 import * as fs from 'fs';
-import { Encryptor, Helpers, strHash } from './encrypthelper';
+import { Encryptor, strHash } from './encrypthelper';
 
 // https://stackoverflow.com/questions/31673587/error-unable-to-verify-the-first-certificate-in-nodejs
 // require('https').globalAgent.options.ca = require('ssl-root-cas/latest').create();
 process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = 0
-
-type Receipt = string;
 
 // Explicit typing for expected args
 interface IArgsLogin {
@@ -32,8 +30,8 @@ interface IArgsFlow {
     id: le.MatchId;
     phrase: string; // needed if we specify file     
     file: string;
-    h: Receipt; // encapsulates (phrase,file)
-    h2: Receipt;
+    h: le.Receipt; // encapsulates (phrase,file)
+    h2: le.Receipt;
     n: number;
 }
 interface IArgs extends IArgsLogin, IArgsFlow {
@@ -110,21 +108,6 @@ function readFileLines(path: string): string[] {
     return lines;
 }
 
-
-// Receipt = UploadHandle + PassPhrase.
-// But only uploadHandle actually goes to server; passphrase never goes to server.
-// Helpers for dealing with receipts/upload handles/passphrases.
-function MakeReceipt(h: le.UploadHandle, phrase: string): Receipt {
-    return h + "-" + phrase;
-}
-function getUploadHandle(r: Receipt): le.UploadHandle {
-    return r.split('-')[0];
-}
-function getPhrase(r: Receipt): le.UploadHandle {
-    return r.split('-')[1];
-}
-
-
 // Helper for reading 
 // https://stackoverflow.com/questions/8128578/reading-value-from-console-interactively
 function readlineAsync(prompt: string): Promise<string> {
@@ -145,7 +128,7 @@ async function inputPassPhrase(): Promise<string> {
     while (true) {
         var phrase = await readlineAsync("Enter a short passphrase for encrypting ([a-z]):");
         phrase = phrase.toLowerCase();
-        if (Helpers.isValidPassPhrase(phrase)) {
+        if (le.Helpers.isValidPassPhrase(phrase)) {
             return phrase;
         }
         console.log(' bad passphrase. Try again.');
@@ -155,7 +138,7 @@ async function inputPassPhrase(): Promise<string> {
 async function inputReceiptAsync(): Promise<string> {
     while (true) {
         var receipt = await readlineAsync("Enter partner's receipt:");
-        if (Helpers.isValidReceipt(receipt)) {
+        if (le.Helpers.isValidReceipt(receipt)) {
             return receipt;
         }
         console.log("  receipt is not valid. Try again.");
@@ -185,7 +168,7 @@ async function workflow(client: le.LEClient, opts: IArgsFlow) {
             var uploadInfo = parseResult.body;
             var handle = await client.uploadFileAsync(uploadInfo);
 
-            opts.h = MakeReceipt(handle, phrase);
+            opts.h = le.Helpers.MakeReceipt(handle, phrase);
 
             console.log("encrypted and uploaded " + file + "...");
 
@@ -213,8 +196,8 @@ async function workflow(client: le.LEClient, opts: IArgsFlow) {
         }
 
         // Now initiate a match 
-        var h1 = getUploadHandle(opts.h);
-        var h2 = getUploadHandle(opts.h2);
+        var h1 = le.Helpers.getUploadHandle(opts.h);
+        var h2 = le.Helpers.getUploadHandle(opts.h2);
         opts.id = await client.createOrAcceptMatch(h1, h2);
         console.log("Match Created: " + opts.id);
     } else {
@@ -240,7 +223,7 @@ async function workflow(client: le.LEClient, opts: IArgsFlow) {
     printReport(response1);
 
     // Verify encryption canary 
-    var decryptor = new Encryptor(getPhrase(opts.h2));
+    var decryptor = new Encryptor(le.Helpers.getPhrase(opts.h2));
     client.verifyCanary(decryptor, response1);
 
 
@@ -292,7 +275,12 @@ async function mainAsync(): Promise<void> {
 
 
 
-    await workflow(client, argv);
+    try {
+        await workflow(client, argv);
+    }
+    catch (err) {
+        console.log("There was an error: " + JSON.stringify(err));
+    }
 }
 
 
