@@ -22,7 +22,7 @@ steps:
 
 # tests use  mocha-junit-reporter to integrate 
 - script: |
-    npm run test2
+    npm run test_pipeline
 
 # voterscience.listexchange.api-1.0.2.tgz
 - script: |
