@@ -1,13 +1,13 @@
 {
   "name": "voterscience.listexchange.api",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "",
   "main": "index.js",
   "scripts": {
-    "pretest": "npm run build && tsc -p .\\test",
+    "pretest": "npm run build && tsc -p ./test",
     "test": "mocha dist_test",
     "test2": "mocha dist_test --reporter mocha-junit-reporter",
-    "build": "tsc -p .\\src"
+    "build": "tsc -p ./src"
   },
   "author": "",
   "license": "ISC",
