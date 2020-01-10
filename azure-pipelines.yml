@@ -23,10 +23,16 @@ steps:
 # tests use  mocha-junit-reporter to integrate 
 - script: |
     npm run test_pipeline
+  displayName: "Run Tests"
+
+- task: PublishTestResults@2
+  inputs:
+    testResultsFiles: '**/TEST-RESULTS.xml'
 
 # voterscience.listexchange.api-1.0.2.tgz
 - script: |
     npm pack
+  displayName: "Pack"
 
 - task: CopyFiles@2
   inputs:
