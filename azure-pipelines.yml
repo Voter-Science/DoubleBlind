@@ -20,6 +20,10 @@ steps:
     npm run build
   displayName: 'npm install and build'
 
+# tests use  mocha-junit-reporter to integrate 
+- script: |
+    npm test2
+
 # voterscience.listexchange.api-1.0.2.tgz
 - script: |
     npm pack
