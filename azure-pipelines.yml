@@ -27,7 +27,7 @@ steps:
 
 - task: PublishTestResults@2
   inputs:
-    testResultsFiles: '**/TEST-RESULTS.xml'
+    testResultsFiles: 'test-results.xml'
 
 # voterscience.listexchange.api-1.0.2.tgz
 - script: |
