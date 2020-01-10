@@ -3,5 +3,6 @@ node_modules
 *.map
 .vscode
 dist
+dist_test
 *.tgz
 

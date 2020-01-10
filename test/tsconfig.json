@@ -6,7 +6,7 @@
         //"suppressImplicitAnyIndexErrors": true,
         "removeComments": true,
         "declaration": true,
-        "outDir": "dist",
+        "outDir": "..\\dist_test",
         "target": "es5", // es5 for browsers
         // Cmdline, so don't include  browser
         "lib": [
