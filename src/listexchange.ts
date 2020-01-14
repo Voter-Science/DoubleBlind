@@ -135,19 +135,7 @@ export class LEClient {
         return x;
     }
 
-    public getUploadInfoFromFile(title: string, lines: string[], enc: Encryptor): IParseResult {
-
-        // Canary test on encryption. 
-        {
-            // Sanity test to validate the encryption locally before sending it over the network.
-            // This should *never* fail.  
-            var x = enc.Encrypt(LEClient._Canary);
-            var y = enc.Decrypt(x);
-            if (LEClient._Canary != y) {
-                throw "Encryption algorithm fails";
-            }
-        }
-
+    public static getUploadInfoFromFileWorker(title: string, lines: string[], enc: Encryptor): IParseResult {
         // TODO - If lines contain a comma, assume there's a header row and skip the first one. 
         var line1: string = lines[0];
         if (line1.indexOf(',') > 0) {
@@ -191,12 +179,29 @@ export class LEClient {
             body.Hashes.push(hash.toString());
             body.EncryptedData.push(encrypted);
         }
-        body.N = body.Samples.length;
+        body.N = body.Hashes.length;
 
         return {
             sampleKeys: sampleKeys,
             body: body
         };
+    }
+
+    public getUploadInfoFromFile(title: string, lines: string[], enc: Encryptor): IParseResult {
+
+        // Canary test on encryption. 
+        {
+            // Sanity test to validate the encryption locally before sending it over the network.
+            // This should *never* fail.  
+            var x = enc.Encrypt(LEClient._Canary);
+            var y = enc.Decrypt(x);
+            if (LEClient._Canary != y) {
+                throw "Encryption algorithm fails";
+            }
+        }
+
+        return LEClient.getUploadInfoFromFileWorker(title, lines, enc);
+
     }
 
     // Returns the handle

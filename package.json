@@ -1,14 +1,19 @@
 {
   "name": "voterscience.listexchange.api",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "",
   "main": "index.js",
   "scripts": {
     "test": "npm run build:all && mocha dist_test",
+    "test_min": "npm run build:test && mocha dist_test",
     "test_pipeline": "npm run build:all && mocha dist_test --reporter mocha-junit-reporter",
     "build:all": "npm run build && npm run build:test",        
     "build": "tsc -p ./src",
     "build:test" : "tsc -p ./test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Voter-Science/DoubleBlind.git"
   },
   "author": "",
   "license": "ISC",
