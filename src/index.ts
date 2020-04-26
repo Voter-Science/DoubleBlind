@@ -216,7 +216,7 @@ async function workflow(client: le.LEClient, opts: IArgsFlow) {
     // Both sides must accept the match to continue;
     console.log();
     console.log("[Waiting for partner to enter your receipt to accept the match...]");
-    console.log("> to resume from here: --id " + opts.id + "--h2 " + opts.h2);
+    console.log("> to resume from here: --id " + opts.id + " --h2 " + opts.h2);
 
     var response1 = await client.waitForStatus(opts.id, le.MatchPhases.Accepted);
     console.log("Match Accepted!");
@@ -258,7 +258,7 @@ async function mainAsync(): Promise<void> {
     var user = argv.user;
     var pswd = argv.pwd;
     var jwt = await login.loginWithPasswordAsync(user, pswd);
-    console.log("Login success...");
+    console.log("(" + user +") Login success... ");
 
     var client = new le.LEClient(jwt, argv.url);
     /*
