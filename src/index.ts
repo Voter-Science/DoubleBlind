@@ -20,6 +20,11 @@ import { Encryptor, strHash } from './encrypthelper';
 // require('https').globalAgent.options.ca = require('ssl-root-cas/latest').create();
 process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = 0
 
+enum ExchangeMode {
+    Overlap = "Overlap",
+    SwapN = "SwapN"
+}
+
 // Explicit typing for expected args
 interface IArgsLogin {
     user: string;
@@ -33,6 +38,7 @@ interface IArgsFlow {
     h: le.Receipt; // encapsulates (phrase,file)
     h2: le.Receipt;
     n: number;
+    mode : string; // ExchangeMode
 }
 interface IArgs extends IArgsLogin, IArgsFlow {
 
@@ -44,6 +50,11 @@ var argv: IArgs = yargs
     .option("phrase", {
         description: "your passphrase for encryption.",
         string: true
+    })
+    .option('mode', {
+        require : false,
+        description : "which operation mode",
+        string : true    
     })
     .option('user', {
         required: true,
@@ -222,18 +233,36 @@ async function workflow(client: le.LEClient, opts: IArgsFlow) {
     console.log("Match Accepted!");
     printReport(response1);
 
-    // Verify encryption canary 
-    var decryptor = new Encryptor(le.Helpers.getPhrase(opts.h2));
-    client.verifyCanary(decryptor, response1);
+    // var mode  : ExchangeMode = ExchangeMode.Overlap;
+    // var mode  : ExchangeMode = (1) ? ExchangeMode.Overlap :  ExchangeMode.Overlap ;
+    //var str : keyof typeof ExchangeMode = opts.mode;
+    var mode  : ExchangeMode = opts.mode as ExchangeMode;
 
+    var decryptor : Encryptor;
 
-    if (!opts.n) {
-        // $$$ Readline for # to swap
-        var nstr = await readlineAsync("How many new entries N to swap?");
-        opts.n = parseInt(nstr);
+    if (mode == ExchangeMode.SwapN)
+    {
+        // Verify encryption canary 
+        decryptor = new Encryptor(le.Helpers.getPhrase(opts.h2));
+        client.verifyCanary(decryptor, response1);
+
+        if (!opts.n) {
+            var nstr = await readlineAsync("How many new entries N to swap?");
+            opts.n = parseInt(nstr);
+        }
+        await client.SwapN(opts.id, opts.n); // Safe to call again. 
+    } 
+    else if (mode == ExchangeMode.Overlap) 
+    {
+        decryptor = new Encryptor(le.Helpers.getPhrase(opts.h));
+
+        if (!opts.n) {
+            var nstr = await readlineAsync("How many new entries N to find overlap?");
+            opts.n = parseInt(nstr);
+        }
+        await client.FindOverlapN(opts.id, opts.n); // Safe to call again. 
     }
-    await client.SwapN(opts.id, opts.n); // Safe to call again. 
-
+ 
     console.log();
     console.log("[Waiting for partner to enter N and agree to the exchange.]");
     console.log("> to resume from here: --id " + opts.id + " --n " + opts.n);
@@ -244,7 +273,9 @@ async function workflow(client: le.LEClient, opts: IArgsFlow) {
 
     var encryptedLines = await client.Download(response2.YourResults);
 
-    // Decrypt results using the phrase from the other's handle. 
+    // Decrypt results.
+    // For SwapN - using the phrase from the other's handle. 
+    // For Overap - use our handle (it's pointing to results in our own set)
 
     for (var i = 0; i < encryptedLines.length; i++) {
         console.log("  " + decryptor.Decrypt(encryptedLines[i]));

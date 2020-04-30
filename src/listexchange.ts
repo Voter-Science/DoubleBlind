@@ -275,6 +275,15 @@ export class LEClient {
         });
     }
 
+    public FindOverlapN(matchId: MatchId, swapN: number): Promise<void> {
+        var u = new XC.UrlBuilder("/match/" + matchId + "/setoverlap");
+        u.addQuery("N", swapN);
+
+        return this._http.postAsync<IMatchStatusResult>(u, undefined).then((response) => {
+            // console.log("swap " + swapN + ". waiting for confirmation.");
+        });
+    }
+
     public Download(handle: DownloadHandle): Promise<string[]> {
         var u = new XC.UrlBuilder("/Download");
         u.addQuery("handle", handle);
